@@ -1,2 +1,5 @@
 # matrix-market-attoparsec
-Attoparsec parsers for the NIST Matrix Market format
+
+[![Build Status](https://travis-ci.org/ocramz/matrix-market-attoparsec.png)](https://travis-ci.org/ocramz/matrix-market-attoparsec)
+
+TODO Description.
