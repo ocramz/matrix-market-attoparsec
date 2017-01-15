@@ -39,25 +39,6 @@ data MSymm = General | Symmetric | SkewSymmetric | Hermitian deriving (Eq, Show)
 
 data MMFormat = MMFormat MRepr MNumFormat MSymm deriving (Eq, Show)
 
-
-
-
-
-repr =
-  (P.string "coordinate" >> pure Coordinate) <|>
-  (P.string "array" >> pure Array)
-
-numFormat =
-  (P.string "real" >> pure R) <|>
-  (P.string "complex" >> pure C) <|>
-  (P.string "integer" >> pure I)
-
-symm =
-  (P.string "general" >> pure General) <|>
-  (P.string "symmetric" >> pure Symmetric) <|>
-  (P.string "skew-symmetric" >> pure SkewSymmetric) <|>
-  (P.string "hermitian" >> pure Hermitian)
-
 parseHeader :: Parser B.ByteString MMFormat
 parseHeader = do
   P.string "%%MatrixMarket matrix"
@@ -70,15 +51,13 @@ parseHeader = do
   return $ MMFormat r f s
 
 
+-- | Matrix information: # rows, # cols, # NZ
+data MMInfo =
+  MMInfo {-# UNBOX #-} !Int
+         {-# UNBOX #-} !Int
+         {-# UNBOX #-} !Int deriving (Eq, Show)
 
-
--- * sparse row types
-
-data SparseInfo =
-  SparseInfo {-# UNBOX #-} !Int
-             {-# UNBOX #-} !Int
-             {-# UNBOX #-} !Int deriving (Eq, Show)
-
+parseInfo :: Parser B.ByteString MMInfo
 parseInfo = do
   spaces
   nr <- P.decimal
@@ -86,7 +65,14 @@ parseInfo = do
   nc <- P.decimal
   spaces
   nnz <- P.decimal
-  return $ SparseInfo nr nc nnz
+  return $ MMInfo nr nc nnz
+
+
+
+
+
+-- * sparse row types
+  
 
 -- | Real-valued, Coordinate 
 data RCoordRow =
@@ -140,7 +126,27 @@ parseCommentLine = do
 commentS :: P.Parser Char
 commentS = P.char '%'
 
-spaces = P.many' P.space
+spaces :: Parser B.ByteString ()
+spaces = P.many' P.space >> pure ()
+
+
+
+
+
+repr =
+  (P.string "coordinate" >> pure Coordinate) <|>
+  (P.string "array" >> pure Array)
+
+numFormat =
+  (P.string "real" >> pure R) <|>
+  (P.string "complex" >> pure C) <|>
+  (P.string "integer" >> pure I)
+
+symm =
+  (P.string "general" >> pure General) <|>
+  (P.string "symmetric" >> pure Symmetric) <|>
+  (P.string "skew-symmetric" >> pure SkewSymmetric) <|>
+  (P.string "hermitian" >> pure Hermitian)
 
 
 
