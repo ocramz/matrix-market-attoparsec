@@ -15,17 +15,26 @@ import qualified Data.Attoparsec.ByteString.Lazy as P
 import Data.Complex
 
 
-
+fname = "data/mm01"
 
 loadData fname = do
   c <- B.readFile fname
-  let header = P.parseOnly parseHeader c
+  let header = P.parseOnly (parseHeader <* P.endOfLine) c
   -- (SparseInfo nr nc nnz) <- P.parseOnly parseInfo c
+      -- comments = P.parseOnly parseComments c
   case header of
     Left e -> error e
-    Right (MMFormat repr numFormat symm) ->
-      undefined
+    Right (MMFormat repr numFormat symm) -> do
+       let info = P.parseOnly (parseInfo <* P.endOfLine) c
+       case info of
+         Left e -> error e
+         Right mmi@(MMInfo nr nc nnz) -> return mmi
       -- case repr of Coordinate -> do
+      --   let info = P.parseOnly parseInfo c
+      --   case info of
+      --     Left e -> error e
+      --     Right (MMInfo nr nc nnz) -> undefined
+            
 
 
 
@@ -175,3 +184,6 @@ symm =
 -- -- | Parser for the whole file
 -- parseRows :: Parser B.ByteString (V.Vector (Row Int))
 -- parseRows = V.fromList <$> P.sepBy parseRow P.endOfLine <* P.endOfInput
+
+
+
