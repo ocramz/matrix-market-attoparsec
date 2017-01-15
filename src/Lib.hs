@@ -17,15 +17,15 @@ import Data.Complex
 
 
 
--- loadData fname = do
---   c <- B.readFile fname
---   let header = P.parseOnly parseHeader c
---   -- (SparseInfo nr nc nnz) <- P.parseOnly parseInfo c
---   case header of
---     Left e -> error e
---     Right (MMFormat repr numFormat symm) ->
---       undefined
---       -- case repr of Coordinate -> do
+loadData fname = do
+  c <- B.readFile fname
+  let header = P.parseOnly parseHeader c
+  -- (SparseInfo nr nc nnz) <- P.parseOnly parseInfo c
+  case header of
+    Left e -> error e
+    Right (MMFormat repr numFormat symm) ->
+      undefined
+      -- case repr of Coordinate -> do
 
 
 
