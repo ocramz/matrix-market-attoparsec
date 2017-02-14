@@ -12,6 +12,8 @@ import Data.ByteString.Lex.Fractional
 import qualified Data.Attoparsec.Lazy           as L
 import qualified Data.ByteString.Lazy           as L
 
+import Control.Monad.Catch
+import Control.Exception.Common
 
 -- | Specifies the element type.  Pattern matrices do not have any elements,
 -- only indices, and only make sense for coordinate matrices and vectors.
@@ -126,9 +128,13 @@ matrix = do
     Pattern -> PatternMatrix (m,n) l `fmap` many1 ((,) <$> integral <*> integral)
 
 
+-- | Load a matrix from file
 readMatrix :: FilePath -> IO Matrix
 readMatrix file = do
   chunks <- L.readFile file
   case L.parse matrix chunks of
-    L.Fail _ _ msg      -> error $ file ++ ": " ++ msg
+    L.Fail _ _ msg      -> throwM (FileParseError "readMatrix" msg)
     L.Done _ mtx        -> return mtx
+
+
+
