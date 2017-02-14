@@ -20,6 +20,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Lib
   other-modules:       Data.Matrix.MatrixMarket
+                       Control.Exception.Common
   build-depends:       base >= 4.7 && < 5
                      , attoparsec        >= 0.10
                      , vector            >= 0.7

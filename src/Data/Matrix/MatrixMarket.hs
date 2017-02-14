@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs             #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Matrix.MatrixMarket (Matrix(..), readMatrix) where
+module Data.Matrix.MatrixMarket (Matrix(..), readMatrix, nnz) where
 
 import Control.Applicative                      hiding ( many )
 
@@ -11,6 +11,8 @@ import Data.Attoparsec.ByteString.Char8
 import Data.ByteString.Lex.Fractional
 import qualified Data.Attoparsec.Lazy           as L
 import qualified Data.ByteString.Lazy           as L
+
+import qualified Data.Vector as V
 
 import Control.Monad.Catch
 import Control.Exception.Common
@@ -51,13 +53,26 @@ data Structure = General | Symmetric | Hermitian | Skew
 data Matrix
   = PatternMatrix (Int,Int) Int [(Int32,Int32)]
   | IntMatrix     (Int,Int) Int [(Int32,Int32,Int)]
-  | RealMatrix    (Int,Int) Int [(Int32,Int32,Float)]
-  | ComplexMatrix (Int,Int) Int [(Int32,Int32,Complex Float)]
+  | RealMatrix    (Int,Int) Int [(Int32,Int32,Double)]
+  | ComplexMatrix (Int,Int) Int [(Int32,Int32,Complex Double)]
   deriving Show
 
+nnz :: Matrix -> Int
+nnz (PatternMatrix _ nz _) = nz
+nnz (IntMatrix _ nz _) = nz
+nnz (RealMatrix _ nz _) = nz
+nnz (ComplexMatrix _ nz _) = nz
+
+
+dat (PatternMatrix _ _ d) = d
+-- dat (IntMatrix _ _ d) = d
+-- dat (RealMatrix _ _ d) = d
+-- dat (ComplexMatrix _ _ d) = d
+
+checkNnz m = nnz m 
 
 --------------------------------------------------------------------------------
--- Combinators
+-- Attoparsec combinators
 --------------------------------------------------------------------------------
 
 comment :: Parser ()
