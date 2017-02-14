@@ -1,0 +1,1 @@
+Trevor McDonell and the `accelerate` contributors : Data.Matrix.MatrixMarket
