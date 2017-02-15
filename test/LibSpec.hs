@@ -10,9 +10,7 @@ main = hspec spec
 
 spec :: Spec
 spec =
-  describe "Lib" $ do
-    -- it "works" $ do
-    --   True `shouldBe` True
+  describe "Data.Matrix.MatrixMarket" $ do
     -- prop "ourAdd is commutative" $ \x y ->
     --   ourAdd x y `shouldBe` ourAdd y x
     it "fidapm05 : imports all matrix entries" $ do 
