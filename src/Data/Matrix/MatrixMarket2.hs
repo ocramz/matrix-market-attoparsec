@@ -139,13 +139,13 @@ matrix = do
   (f, t, s) <- header
   (m, n, l) <- skipMany comment *> extent
   case t of 
-    Real -> RMatrix (m,n) l f s <$> parseLines (line floating)
-    Complex -> CMatrix (m,n) l f s <$> parseLines (line ((:+) <$> floating <*> floating))
-    Integer -> IntMatrix     (m,n) l f s <$> parseLines (line integral)
-    Pattern -> PatternMatrix (m,n) l f s <$> parseLines ((,) <$> integral <*> integral)
+    Real -> RMatrix (m,n) l f s <$> many1 (line floating)
+    Complex -> CMatrix (m,n) l f s <$> many1 (line ((:+) <$> floating <*> floating))
+    Integer -> IntMatrix     (m,n) l f s <$> many1 (line integral)
+    Pattern -> PatternMatrix (m,n) l f s <$> many1 ((,) <$> integral <*> integral)
 
 
-parseLines f = many1 f -- <* endOfInput
+-- parseLines f = many1 f -- <* endOfInput
 
 
 -- | Load a matrix from file

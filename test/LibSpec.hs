@@ -11,13 +11,16 @@ main = hspec spec
 spec :: Spec
 spec =
   describe "Lib" $ do
-    it "works" $ do
-      True `shouldBe` True
+    -- it "works" $ do
+    --   True `shouldBe` True
     -- prop "ourAdd is commutative" $ \x y ->
     --   ourAdd x y `shouldBe` ourAdd y x
-    it "imports all matrix entries" $ do 
+    it "fidapm05 : imports all matrix entries" $ do 
       x <- readMatrix "data/fidapm05.mtx"
       isConsistent x `shouldBe` True
+    it "memplus : imports all matrix entries" $ do 
+      x <- readMatrix "data/memplus.mtx"
+      isConsistent x `shouldBe` True  
 
 
 isConsistent :: Matrix t -> Bool
