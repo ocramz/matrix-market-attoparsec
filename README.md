@@ -24,7 +24,7 @@ The first two functions contain the parsing logic, and make use of `scientific` 
 ### Naming convention
 
 We follow the MatrixMarket format definitions, by which a "Matrix" is _sparse_ and stored in coordinate format (row, column, entry), whereas an "Array" is a _dense_ grid of numbers, stored in column-oriented form.
-
+Algebraic vectors, such as the right-hand sides of equation systems, are stored in Array format, as n-by-1.
 
 ## Testing
 
