@@ -38,3 +38,12 @@ consistentDimsArr :: Array a -> Bool
 consistentDimsArr mm = d == numDatArr mm where
   (m,n) = dimArr mm
   d = m*n
+
+
+
+roundTrip fname ftemp = do
+  let fname2 = fname ++ ftemp
+  m0 <- readMatrix fname
+  writeMatrix fname2 m0
+  m1 <- readMatrix fname2
+  m0 `shouldBe` m1
