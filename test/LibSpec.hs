@@ -18,6 +18,9 @@ spec =
     it "fidapm05 : imports all matrix entries" $ do 
       x <- readMatrix "data/fidapm05.mtx"
       consistentDims x `shouldBe` True
+    it "fidapm05_rhs1 : imports all array entries" $ do 
+      x <- readArray "data/fidapm05_rhs1.mtx"
+      consistentDimsArr x `shouldBe` True  
     it "memplus : imports all matrix entries" $ do 
       x <- readMatrix "data/memplus.mtx"
       consistentDims x `shouldBe` True
