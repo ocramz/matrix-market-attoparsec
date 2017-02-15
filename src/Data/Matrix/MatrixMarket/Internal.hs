@@ -70,17 +70,20 @@ data Structure = General | Symmetric | Hermitian | Skew
     deriving (Eq, Show)
 
 
--- | NB: indices are 1-based i.e. A(1,1) is the top-left entry of matrix A
+-- | Sparse matrix in coordinate form (row, column, entry)
+-- NB: indices are 1-based i.e. A(1,1) is the top-left entry of matrix A
 data Matrix a = RMatrix (Int, Int) Int Structure [(Int, Int, a)]
               | CMatrix (Int, Int) Int Structure [(Int, Int, Complex a)]
               | PatternMatrix (Int,Int) Int  Structure [(Int32,Int32)]
-              | IntMatrix (Int,Int) Int Structure [(Int32,Int32,Int)] deriving (Eq, Show)
+              | IntMatrix (Int,Int) Int Structure [(Int32,Int32,Int)]
+              deriving (Eq, Show)
 
 
 
-
+-- | Array, i.e. a DENSE matrix (also used to represent vectors as n-by-1 matrices)
 data Array a = RArray (Int, Int) Structure [a]
-             | CArray (Int, Int) Structure [Complex a] deriving (Eq, Show)
+             | CArray (Int, Int) Structure [Complex a]
+             deriving (Eq, Show)
 
 
 
