@@ -276,19 +276,21 @@ writeArray file arr =
 
 -- | helpers
 
-
+-- | Number of matrix nonzeros
 nnz :: Matrix t -> Int
 nnz m = case m of (RMatrix _ nz _ _) -> nz
                   (CMatrix _ nz _ _) -> nz
                   (PatternMatrix _ nz _ _) -> nz
                   (IntMatrix _ nz _ _) -> nz
 
+-- | Matrix size : number of rows, number of columns
 dim :: Matrix t -> (Int, Int)
 dim m = case m of (RMatrix d _ _ _) -> d
                   (CMatrix d _ _ _) -> d
                   (PatternMatrix d _ _ _) -> d
                   (IntMatrix d _ _ _) -> d
 
+-- | Length of data vector internal to the Matrix; this is _not_ necessarily the actual number of matrix entries because symmetric entries are not stored 
 numDat :: Matrix t -> Int
 numDat m = case m of (RMatrix _ _ _ d) -> length d
                      (CMatrix _ _ _ d) -> length d
@@ -296,10 +298,12 @@ numDat m = case m of (RMatrix _ _ _ d) -> length d
                      (IntMatrix _ _ _ d) -> length d
 
 
+-- | Array size : number of rows, number of columns
 dimArr :: Array t -> (Int, Int)
 dimArr a = case a of (RArray d _ _) -> d
                      (CArray d _ _) -> d
- 
+
+-- | Length of data vector internal to the Array; this is _not_ necessarily the actual number of matrix entries because symmetric entries are not stored 
 numDatArr :: Array a -> Int
 numDatArr a = case a of (RArray _ _ ll) -> length ll 
                         (CArray _ _ ll) -> length ll            

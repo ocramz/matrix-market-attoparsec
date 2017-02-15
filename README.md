@@ -10,7 +10,6 @@ The library also contains functions for serializing to text file, and the read/w
 
 The module `Data.Matrix.MatrixMarket` exports the user interface:
 
-
     readMatrix :: FilePath -> IO (Matrix S.Scientific)
 
     readArray :: FilePath -> IO (Array S.Scientific)
@@ -21,7 +20,15 @@ The module `Data.Matrix.MatrixMarket` exports the user interface:
 
 The first two functions contain the parsing logic, and make use of `scientific` for parsing numerical data in scientific notation.
 
-`test/LibSpec.hs` contains a simple read/write/read sanity test:
+
+### Naming convention
+
+We follow the MatrixMarket format definitions, by which a "Matrix" is _sparse_ and stored in coordinate format (row, column, entry), whereas an "Array" is a _dense_ grid of numbers, stored in column-oriented form.
+
+
+## Testing
+
+`test/LibSpec.hs` contains a simple read/write/read sanity test for the included Matrix Marked data files (`fidapm05.mtx` and `fidapm05_rhs1.mtx`):
 
     m0 <- readMatrix fname   -- load original
     writeMatrix ftemp m0     -- save as temp
