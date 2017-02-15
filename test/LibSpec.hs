@@ -1,10 +1,9 @@
 module LibSpec where
 
-import Control.Exception
 import System.Directory (removeFile)
 
 import Test.Hspec
-import Test.Hspec.QuickCheck
+-- import Test.Hspec.QuickCheck
 
 import Data.Matrix.MatrixMarket
 
@@ -42,7 +41,7 @@ consistentDimsArr mm = d == numDatArr mm where
   (m,n) = dimArr mm
   d = m*n
 
-
+dataDir :: String
 dataDir = "data"
 
 roundTrip :: Format -> FilePath -> IO ()

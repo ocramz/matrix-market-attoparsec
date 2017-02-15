@@ -3,7 +3,7 @@
 -- |
 -- Module      :  Data.Matrix.MatrixMarket.Internal
 -- Copyright   :  (c) Marco Zocca 2017
--- License     :  GPL-style (see the file LICENSE)
+-- License     :  GPL-3 (see the file LICENSE)
 --
 -- Maintainer  :  zocca marco gmail
 -- Stability   :  experimental
@@ -33,7 +33,7 @@ import qualified Data.Char as C
 import Data.Complex
 import qualified Data.Scientific as S
 import Data.Attoparsec.ByteString.Char8 hiding (I)
-import qualified Data.ByteString as BS
+-- import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Attoparsec.Lazy           as L
 import qualified Data.ByteString.Lazy           as L
@@ -309,10 +309,11 @@ numDatArr a = case a of (RArray _ _ ll) -> length ll
 
 -- | String -> ByteString
 -- NB: do not abuse
-toBS :: String -> BS.ByteString
-toBS x = BS.pack $ (toEnum . C.ord) <$> x
+-- toBS :: String -> BS.ByteString
+-- toBS x = BS.pack $ (toEnum . C.ord) <$> x
 
 -- | String -> lazy ByteString
+-- NB: do not abuse
 toLBS :: String -> L.ByteString
 toLBS x = L.pack $ (toEnum . C.ord) <$> x
 
