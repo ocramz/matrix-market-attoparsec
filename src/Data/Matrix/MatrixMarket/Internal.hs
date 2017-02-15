@@ -20,7 +20,7 @@ module Data.Matrix.MatrixMarket.Internal
        (readMatrix, readArray,
         writeMatrix, writeArray,
         Matrix(..), Array(..),
-        Format (Coordinate, Array),
+        Format (Coordinate, Array), Structure (General, Symmetric, Hermitian, Skew),
         nnz, dim, numDat,
         dimArr, numDatArr) where
 
@@ -274,7 +274,8 @@ writeArray file arr =
 
 
 
--- helpers
+-- | helpers
+
 
 nnz :: Matrix t -> Int
 nnz m = case m of (RMatrix _ nz _ _) -> nz

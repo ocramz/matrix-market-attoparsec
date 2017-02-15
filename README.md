@@ -15,8 +15,6 @@ The module `Data.Matrix.MatrixMarket` exports the user interface:
 
     readArray :: FilePath -> IO (Array S.Scientific)
 
-
-
     writeMatrix :: Show a => FilePath -> Matrix a -> IO ()
  
     writeArray :: Show a => FilePath -> Array a -> IO ()  

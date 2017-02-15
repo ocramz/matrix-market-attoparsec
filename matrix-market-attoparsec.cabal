@@ -26,16 +26,13 @@ library
   exposed-modules:     Data.Matrix.MatrixMarket
   other-modules:       Data.Matrix.MatrixMarket.Internal
                        Control.Exception.Common
-  build-depends:       QuickCheck
-                     , attoparsec        >= 0.10
-                     , base >= 4.7 && < 5
-                     , bytestring        >= 0.9
+  build-depends:       attoparsec  >= 0.10
+                     , base        >= 4.7 && < 5
+                     , bytestring  >= 0.9
                      , directory
                      , exceptions
-                     , hspec
-                     , scientific
-                     , scientific >= 0.3.4.9
-                     , vector            >= 0.7
+                     , scientific  >= 0.3.4.9
+                     , vector      >= 0.7
 
 -- executable matrix-market-attoparsec
 --   default-language:    Haskell2010
@@ -58,7 +55,6 @@ test-suite spec
                      , directory
                      , hspec
                      , matrix-market-attoparsec
-                     , scientific >= 0.3.4.9
 
 source-repository head
   type:     git
