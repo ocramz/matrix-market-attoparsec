@@ -20,6 +20,7 @@ module Data.Matrix.MatrixMarket.Internal
        (readMatrix, readArray,
         writeMatrix, writeArray,
         Matrix(..), Array(..),
+        Format (Coordinate, Array),
         nnz, dim, numDat,
         dimArr, numDatArr) where
 
@@ -191,7 +192,7 @@ readArray :: FilePath -> IO (Array S.Scientific)
 readArray file = do
   chunks <- L.readFile file
   case L.parse array chunks of
-    L.Fail _ _ msg      -> throwM (FileParseError "readMatrix" msg)
+    L.Fail _ _ msg      -> throwM (FileParseError "readArray" msg)
     L.Done _ mtx        -> return mtx
 
 

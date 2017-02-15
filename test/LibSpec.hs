@@ -19,9 +19,9 @@ spec =
     -- prop "ourAdd is commutative" $ \x y ->
     --   ourAdd x y `shouldBe` ourAdd y x
     it "fidapm05 : read/write/read roundtrip" $ do 
-      roundTrip "fidapm05.mtx" -- fidapm05_rhs1.mtx
+      roundTrip Coordinate "fidapm05.mtx" -- fidapm05_rhs1.mtx
     it "fidapm05_rhs1 : read/write/read roundtrip" $ do 
-      roundTrip "fidapm05_rhs1.mtx"
+      roundTrip Array "fidapm05_rhs1.mtx"
     -- it "memplus : read/write/read roundtrip" $ do 
     --   roundTrip "memplus.mtx"
     -- it "memplus_rhs1 : imports all array entries" $ do 
@@ -45,15 +45,22 @@ consistentDimsArr mm = d == numDatArr mm where
 
 dataDir = "data"
 
-roundTrip :: FilePath -> IO ()
-roundTrip fname0 = do
+roundTrip :: Format -> FilePath -> IO ()
+roundTrip f fname0 = do
   let
     fname = dataDir ++ "/" ++ fname0
     ftemp = fname ++ "_temp"
-  m0 <- readMatrix fname   -- load original
-  writeMatrix ftemp m0     -- save as temp
-  m1 <- readMatrix ftemp   -- load temp
-  m0 `shouldBe` m1         -- compare temp with original
+  if f == Coordinate
+    then do   
+    m0 <- readMatrix fname   -- load original
+    writeMatrix ftemp m0     -- save as temp
+    m1 <- readMatrix ftemp   -- load temp
+    m0 `shouldBe` m1
+    else do
+    m0 <- readArray fname   -- load original
+    writeArray ftemp m0     -- save as temp
+    m1 <- readArray ftemp   -- load temp
+    m0 `shouldBe` m1
   removeFile ftemp         -- remove temp 
 
 
