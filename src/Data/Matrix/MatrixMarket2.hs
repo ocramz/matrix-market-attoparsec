@@ -1,7 +1,6 @@
-{-# LANGUAGE GADTs             #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs, OverloadedStrings, DeriveFunctor #-}
 
-module Data.Matrix.MatrixMarket (Matrix(..), readMatrix, nnz) where
+module Data.Matrix.MatrixMarket2 where
 
 import Control.Applicative                      hiding ( many )
 
@@ -35,7 +34,7 @@ data Field  = Real | Complex | Integer | Pattern
 data Format = Coordinate | Array
     deriving (Eq, Show)
 
--- | Specifies any special structure in the matrix.  For symmetric and hermition
+-- | Specifies any special structure in the matrix.  For symmetric and hermitian
 -- matrices, only the lower-triangular part of the matrix is given. For skew
 -- matrices, only the entries below the diagonal are stored.
 --
@@ -43,30 +42,35 @@ data Structure = General | Symmetric | Hermitian | Skew
     deriving (Eq, Show)
 
 
--- We really want a type parameter to Matrix, but I think that requires some
--- kind of dynamic typing so that we can determine (a ~ Integral) or (a ~
--- RealFloat), and so forth, depending on the file being read. This will do for
--- our purposes...
+-- | NB: indices are 1-based i.e. A(1,1) is the top-left entry of matrix A
+data Matrix a = RMatrix (Int, Int) Int Format Structure [(Int, Int, a)]
+              | CMatrix (Int, Int) Int Format Structure [(Int, Int, Complex a)]
+              | PatternMatrix (Int,Int) Int Format Structure [(Int32,Int32)]
+              | IntMatrix (Int,Int) Int Format Structure [(Int32,Int32,Int)] deriving (Eq, Show)
+
+nnz :: Matrix t -> Int
+nnz m = case m of (RMatrix _ nz _ _ _) -> nz
+                  (CMatrix _ nz _ _ _) -> nz
+                  (PatternMatrix _ nz _ _ _) -> nz
+                  (IntMatrix _ nz _ _ _) -> nz
+
+dim :: Matrix t -> (Int, Int)
+dim m = case m of (RMatrix d _ _ _ _) -> d
+                  (CMatrix d _ _ _ _) -> d
+                  (PatternMatrix d _ _ _ _) -> d
+                  (IntMatrix d _ _ _ _) -> d
+
+numDat :: Matrix t -> Int
+numDat m = case m of (RMatrix _ _ _ _ d) -> length d
+                     (CMatrix _ _ _ _ d) -> length d
+                     (PatternMatrix _ _ _ _ d) -> length d
+                     (IntMatrix _ _ _ _ d) -> length d
+
+
 --
--- Format is: (rows,columns) nnz [(row,column,value)]
---
-data Matrix
-  = PatternMatrix (Int,Int) Int [(Int32,Int32)]
-  | IntMatrix     (Int,Int) Int [(Int32,Int32,Int)]
-  | RealMatrix    (Int,Int) Int [(Int32,Int32,Double)]
-  | ComplexMatrix (Int,Int) Int [(Int32,Int32,Complex Double)]
-  deriving Show
 
--- | number of nonzero elements stored in the header
-nnz :: Matrix -> Int
-nnz (PatternMatrix _ nz _) = nz
-nnz (IntMatrix _ nz _) = nz
-nnz (RealMatrix _ nz _) = nz
-nnz (ComplexMatrix _ nz _) = nz
-
-
-
-
+-- headerStr :: Data.ByteString
+headerStr = "%%MatrixMarket matrix"
 
 
 --------------------------------------------------------------------------------
@@ -108,7 +112,7 @@ structure =  string "general"        *> pure General
          <?> "matrix structure"
 
 header :: Parser (Format,Field,Structure)
-header =  string "%%MatrixMarket matrix"
+header =  string headerStr -- "%%MatrixMarket matrix"
        >> (,,) <$> (skipSpace *> format)
                <*> (skipSpace *> field)
                <*> (skipSpace *> structure)
@@ -127,22 +131,25 @@ line f = (,,) <$> integral
               <*  endOfLine
 
 --------------------------------------------------------------------------------
--- Matrix Market
+-- Load and parse
 --------------------------------------------------------------------------------
 
-matrix :: Parser Matrix
+matrix :: Parser (Matrix Double)
 matrix = do
-  (_,t,_) <- header
-  (m,n,l) <- skipMany comment *> extent
-  case t of
-    Real    -> RealMatrix    (m,n) l `fmap` many1 (line floating)
-    Complex -> ComplexMatrix (m,n) l `fmap` many1 (line ((:+) <$> floating <*> floating))
-    Integer -> IntMatrix     (m,n) l `fmap` many1 (line integral)
-    Pattern -> PatternMatrix (m,n) l `fmap` many1 ((,) <$> integral <*> integral)
+  (f, t, s) <- header
+  (m, n, l) <- skipMany comment *> extent
+  case t of 
+    Real -> RMatrix (m,n) l f s <$> parseLines (line floating)
+    Complex -> CMatrix (m,n) l f s <$> parseLines (line ((:+) <$> floating <*> floating))
+    Integer -> IntMatrix     (m,n) l f s <$> parseLines (line integral)
+    Pattern -> PatternMatrix (m,n) l f s <$> parseLines ((,) <$> integral <*> integral)
+
+
+parseLines f = many1 f -- <* endOfInput
 
 
 -- | Load a matrix from file
-readMatrix :: FilePath -> IO Matrix
+readMatrix :: FilePath -> IO (Matrix Double)
 readMatrix file = do
   chunks <- L.readFile file
   case L.parse matrix chunks of
@@ -151,6 +158,11 @@ readMatrix file = do
 
 
 
+--------------------------------------------------------------------------------
+-- Write to file
+--------------------------------------------------------------------------------
 
 
-
+-- writeMatrix file mat = do
+  
+  

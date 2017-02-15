@@ -2,7 +2,7 @@
 module Lib (module MM) where
 
 
-import Data.Matrix.MatrixMarket as MM
+import Data.Matrix.MatrixMarket2 as MM
 
 
 
