@@ -1,6 +1,6 @@
 name:                matrix-market-attoparsec
 version:             0.1.0.3
-synopsis:            Attoparsec parsers for the NIST Matrix Market format
+synopsis:            Parsing and serialization functions for the NIST Matrix Market format
 description:         Please see README.md
 homepage:            https://github.com/ocramz/matrix-market-attoparsec
 license:             GPL-3
