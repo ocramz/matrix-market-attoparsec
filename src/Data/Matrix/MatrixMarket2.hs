@@ -48,23 +48,11 @@ data Matrix a = RMatrix (Int, Int) Int Format Structure [(Int, Int, a)]
               | PatternMatrix (Int,Int) Int Format Structure [(Int32,Int32)]
               | IntMatrix (Int,Int) Int Format Structure [(Int32,Int32,Int)] deriving (Eq, Show)
 
-nnz :: Matrix t -> Int
-nnz m = case m of (RMatrix _ nz _ _ _) -> nz
-                  (CMatrix _ nz _ _ _) -> nz
-                  (PatternMatrix _ nz _ _ _) -> nz
-                  (IntMatrix _ nz _ _ _) -> nz
 
-dim :: Matrix t -> (Int, Int)
-dim m = case m of (RMatrix d _ _ _ _) -> d
-                  (CMatrix d _ _ _ _) -> d
-                  (PatternMatrix d _ _ _ _) -> d
-                  (IntMatrix d _ _ _ _) -> d
 
-numDat :: Matrix t -> Int
-numDat m = case m of (RMatrix _ _ _ _ d) -> length d
-                     (CMatrix _ _ _ _ d) -> length d
-                     (PatternMatrix _ _ _ _ d) -> length d
-                     (IntMatrix _ _ _ _ d) -> length d
+
+data Array a = RArray (Int, Int) [a]
+             | CArray (Int, Int) [Complex a] deriving (Eq, Show)
 
 
 --
@@ -119,16 +107,23 @@ header =  string headerStr -- "%%MatrixMarket matrix"
                <*  endOfLine
                <?> "MatrixMarket header"
 
-extent :: Parser (Int,Int,Int)
-extent = do
+extentMatrix :: Parser (Int,Int,Int)
+extentMatrix = do
   [m,n,l] <- skipWhile isSpace *> count 3 integral <* endOfLine
   return (m,n,l)
 
-line :: Integral i => Parser a -> Parser (i,i,a)
-line f = (,,) <$> integral
-              <*> integral
-              <*> f
-              <*  endOfLine
+extentArray :: Parser (Int,Int)
+extentArray = do
+  [m,n] <- skipWhile isSpace *> count 2 integral <* endOfLine
+  return (m,n)
+
+line3 :: Integral i => Parser a -> Parser (i,i,a)
+line3 f = (,,) <$> integral
+               <*> integral
+               <*> f
+               <*  endOfLine
+
+
 
 --------------------------------------------------------------------------------
 -- Load and parse
@@ -137,13 +132,27 @@ line f = (,,) <$> integral
 matrix :: Parser (Matrix Double)
 matrix = do
   (f, t, s) <- header
-  (m, n, l) <- skipMany comment *> extent
-  case t of 
-    Real -> RMatrix (m,n) l f s <$> many1 (line floating)
-    Complex -> CMatrix (m,n) l f s <$> many1 (line ((:+) <$> floating <*> floating))
-    Integer -> IntMatrix     (m,n) l f s <$> many1 (line integral)
-    Pattern -> PatternMatrix (m,n) l f s <$> many1 ((,) <$> integral <*> integral)
+  (m, n, l) <- skipMany comment *> extentMatrix
+  if f/=Coordinate
+    then fail "matrix is not in Coordinate format"
+    else
+    case t of 
+     Real -> RMatrix (m,n) l f s <$> many1 (line3 floating)
+     Complex -> CMatrix (m,n) l f s <$> many1 (line3 ((:+) <$> floating <*> floating))
+     Integer -> IntMatrix     (m,n) l f s <$> many1 (line3 integral)
+     Pattern -> PatternMatrix (m,n) l f s <$> many1 ((,) <$> integral <*> integral)
 
+array :: Parser (Array Double)
+array = do
+  (f, t, _) <- header
+  (m, n) <- skipMany comment *> extentArray
+  if f /= Array
+    then fail "array is not in Array format"
+    else
+     case t of
+       Real -> RArray (m,n) <$> many1 floating
+       Complex -> CArray (m,n) <$> many1 ((:+) <$> floating <*> floating)
+       _ -> fail "integer and pattern cases not relevant for the dense case"
 
 -- parseLines f = many1 f -- <* endOfInput
 
@@ -156,6 +165,12 @@ readMatrix file = do
     L.Fail _ _ msg      -> throwM (FileParseError "readMatrix" msg)
     L.Done _ mtx        -> return mtx
 
+readArray :: FilePath -> IO (Array Double)
+readArray file = do
+  chunks <- L.readFile file
+  case L.parse array chunks of
+    L.Fail _ _ msg      -> throwM (FileParseError "readMatrix" msg)
+    L.Done _ mtx        -> return mtx
 
 
 --------------------------------------------------------------------------------
@@ -166,3 +181,37 @@ readMatrix file = do
 -- writeMatrix file mat = do
   
   
+
+
+
+
+
+
+-- helpers
+
+nnz :: Matrix t -> Int
+nnz m = case m of (RMatrix _ nz _ _ _) -> nz
+                  (CMatrix _ nz _ _ _) -> nz
+                  (PatternMatrix _ nz _ _ _) -> nz
+                  (IntMatrix _ nz _ _ _) -> nz
+
+dim :: Matrix t -> (Int, Int)
+dim m = case m of (RMatrix d _ _ _ _) -> d
+                  (CMatrix d _ _ _ _) -> d
+                  (PatternMatrix d _ _ _ _) -> d
+                  (IntMatrix d _ _ _ _) -> d
+
+numDat :: Matrix t -> Int
+numDat m = case m of (RMatrix _ _ _ _ d) -> length d
+                     (CMatrix _ _ _ _ d) -> length d
+                     (PatternMatrix _ _ _ _ d) -> length d
+                     (IntMatrix _ _ _ _ d) -> length d
+
+
+dimArr :: Array t -> (Int, Int)
+dimArr a = case a of (RArray d _) -> d
+                     (CArray d _) -> d
+
+numDatArr :: Array a -> Int
+numDatArr a = case a of (RArray _ ll) -> length ll 
+                        (CArray _ ll) -> length ll            
