@@ -99,10 +99,10 @@ comment = char '%' *> skipWhile (not . eol) *> endOfLine
 --        Just (v,_) -> return v
 --        Nothing    -> fail "floating-point number"
 
-floating = skipSpace *> scientific -- <$> (skipSpace *> takeTill isSpace)
+floating = skipSpace' *> scientific -- <$> (skipSpace *> takeTill isSpace)
 
 integral :: Integral a => Parser a
-integral = skipSpace *> decimal
+integral = skipSpace' *> decimal
 
 format :: Parser Format
 format =  string "coordinate" *> pure Coordinate
@@ -125,20 +125,20 @@ structure =  string "general"        *> pure General
 
 header :: Parser (Format,Field,Structure)
 header =  string "%%MatrixMarket matrix"
-       >> (,,) <$> (skipSpace *> format)
-               <*> (skipSpace *> field)
-               <*> (skipSpace *> structure)
+       >> (,,) <$> (skipSpace' *> format)
+               <*> (skipSpace' *> field)
+               <*> (skipSpace' *> structure)
                <*  endOfLine
                <?> "MatrixMarket header"
 
 extentMatrix :: Parser (Int,Int,Int)
 extentMatrix = do
-  [m,n,l] <- skipWhile isSpace *> count 3 integral <* endOfLine
+  [m,n,l] <- skipSpace' *> count 3 integral <* endOfLine
   return (m,n,l)
 
 extentArray :: Parser (Int,Int)
 extentArray = do
-  [m,n] <- skipWhile isSpace *> count 2 integral <* endOfLine
+  [m,n] <- skipSpace' *> count 2 integral <* endOfLine
   return (m,n)
 
 line3 :: Integral i => Parser a -> Parser (i,i,a)
@@ -147,6 +147,8 @@ line3 f = (,,) <$> integral
                <*> f
                <*  endOfLine
 
+skipSpace' :: Parser String
+skipSpace' = many' space
 
 
 --------------------------------------------------------------------------------
