@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs, OverloadedStrings, DeriveFunctor #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Matrix.MatrixMarket2
+-- Module      :  Data.Matrix.MatrixMarket.Internal
 -- Copyright   :  (c) Marco Zocca 2017
 -- License     :  GPL-style (see the file LICENSE)
 --
@@ -10,28 +10,32 @@
 -- Portability :  portable
 --
 -- Attoparsec parser and serializer for the NIST MatrixMarket format. The parser logic originally appeared in `accelerate-examples` and it is reused here (courtesy of T.McDonell and the `accelerate` developers) with some amendments.
--- For example, in this version we use Scientific notation instead of Float
+-- 
+-- In this version:
+-- *) Numbers are represented with Scientific notation instead of floating point
+-- *) Parsing rules are a bit relaxed to accommodate various whitespace corner cases
 --
 -----------------------------------------------------------------------------
-module Data.Matrix.MatrixMarket.Internal where
+module Data.Matrix.MatrixMarket.Internal
+       (readMatrix, readArray,
+        writeMatrix, writeArray,
+        Matrix(..), Array(..),
+        nnz, dim, numDat,
+        dimArr, numDatArr) where
+
+
 
 import Control.Applicative                      hiding ( many )
 
 import Data.Int
-import Data.List
 import qualified Data.Char as C
 import Data.Complex
 import qualified Data.Scientific as S
 import Data.Attoparsec.ByteString.Char8 hiding (I)
-import GHC.Word
-import Data.ByteString.Lex.Fractional
--- import qualified Data.ByteString.Internal as B
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Attoparsec.Lazy           as L
 import qualified Data.ByteString.Lazy           as L
-
--- import qualified Data.Vector as V
 
 import Control.Monad.Catch
 import Control.Exception.Common
@@ -91,15 +95,8 @@ comment = char '%' *> skipWhile (not . eol) *> endOfLine
   where
     eol w = w `elem` ("\n\r" :: String)
 
--- floating :: Fractional a => Parser a
--- floating = do
---   -- mv <- readSigned readDecimal <$> (skipSpace *> takeTill isSpace)
---   mv <- scientific <$> (skipSpace *> takeTill isSpace)
---   case mv of
---        Just (v,_) -> return v
---        Nothing    -> fail "floating-point number"
-
-floating = skipSpace' *> scientific -- <$> (skipSpace *> takeTill isSpace)
+floating :: Parser S.Scientific
+floating = skipSpace' *> scientific
 
 integral :: Integral a => Parser a
 integral = skipSpace' *> decimal
@@ -180,8 +177,6 @@ array = do
        C -> CArray (m,n) s <$> many1 ((:+) <$> floating <*> floating)
        _ -> fail "integer and pattern cases not relevant for the dense case"
 
--- parseLines f = many1 f -- <* endOfInput
-
 
 -- | Load a matrix (sparse, i.e. in Coordinate format) from file
 readMatrix :: FilePath -> IO (Matrix S.Scientific)
@@ -210,6 +205,8 @@ showFormat = map C.toLower <$> show
 showField :: Field -> String
 showField f = case f of R -> "real"
                         C -> "complex"
+                        I -> "integer"
+                        P -> "pattern"
 
 showStruct :: Structure -> String
 showStruct = map C.toLower <$> show
@@ -222,58 +219,50 @@ headerStr f t s =
                       showFormat f, showField t, showStruct s]
 
 
-headerSzMatrix :: (Show a2, Show a1, Show a) => (a, a1) -> a2 -> L.ByteString
-headerSzMatrix (m,n) nz = B.pack $ unwords [show m, show n, show nz] 
-headerSzArray :: (Show a1, Show a) => (a, a1) -> L.ByteString
-headerSzArray (m,n) = B.pack $ unwords [show m, show n]
-
-
--- | From a sparse matrix in Coordinate format to its MatrixMarket serialized form
-matrixByteString :: Show b => 
- (Int, Int) -> Int -> Field -> Structure -> [(Int, Int, b)] -> L.ByteString
-matrixByteString di nz t s d =
-  L.concat [headerStr Coordinate t s,
-            nl,
-            headerSzMatrix di nz,
-            nl,
-            showLines sf3 d] where
-  sf3 (i,j,x) = unwords [show i, show j, show x]
-
--- | From a dense matrix in Array format to its MatrixMarket serialized form
-arrayByteString :: Show a =>
-     (Int, Int) -> Field -> Structure -> [a] -> L.ByteString
-arrayByteString di t s d =
-  L.concat [headerStr Array t s,
-            nl,
-            headerSzArray di,
-            nl,
-            showLines show d]
-  
-
 nl :: L.ByteString
-nl = L.pack $ withNewline " "
+nl = toLBS "\n" 
 
 showLines :: (a -> String) -> [a] -> L.ByteString
-showLines showf d = L.concat (L.pack . withNewline . showf <$> d)
-
-withNewline :: Enum b => String -> [b]
-withNewline x = toEnum . C.ord <$> x ++ "\n"
+showLines showf d = L.concat (L.pack . withNewline . showf <$> d) where
+  withNewline x = toEnum . C.ord <$> x ++ "\n"
 
 
 
-
-
+-- | Serialize a sparse matrix in Coordinate format
 writeMatrix :: Show b => FilePath -> Matrix b -> IO ()
-writeMatrix file mat = do
+writeMatrix file mat = 
   case mat of (RMatrix d nz s dat) -> 
                 L.writeFile file (matrixByteString d nz R s dat)
               (CMatrix d nz s dat) -> 
-                L.writeFile file (matrixByteString d nz C s dat) 
+                L.writeFile file (matrixByteString d nz C s dat)
+              (IntMatrix d nz s dat) -> 
+                L.writeFile file (matrixByteString d nz I s dat)
+              _ -> error "writeMatrix : PatternMatrix not implemented yet"
+     where
+       matrixByteString di nz t s d =
+         L.concat [headerStr Coordinate t s,
+                   nl,
+                   headerSzMatrix di nz,
+                   nl,
+                   showLines sf3 d]
+         where
+         sf3 (i,j,x) = unwords [show i, show j, show x]
+         headerSzMatrix (m,n) numz = B.pack $ unwords [show m, show n, show numz] 
 
+-- | Serialize a dense matrix in Array format
 writeArray :: Show a => FilePath -> Array a -> IO ()  
-writeArray file arr = do
+writeArray file arr = 
   case arr of (RArray d s dat) -> L.writeFile file (arrayByteString d R s dat)
               (CArray d s dat) -> L.writeFile file (arrayByteString d C s dat)
+    where
+      arrayByteString di t s d =
+        L.concat [headerStr Array t s,
+            nl,
+            headerSzArray di,
+            nl,
+            showLines show d] where
+        headerSzArray (m,n) = B.pack $ unwords [show m, show n]
+  
   
 
 
@@ -303,12 +292,12 @@ numDat m = case m of (RMatrix _ _ _ d) -> length d
 
 
 dimArr :: Array t -> (Int, Int)
-dimArr a = case a of (RArray d s _) -> d
-                     (CArray d s _) -> d
+dimArr a = case a of (RArray d _ _) -> d
+                     (CArray d _ _) -> d
  
 numDatArr :: Array a -> Int
-numDatArr a = case a of (RArray _ s ll) -> length ll 
-                        (CArray _ s ll) -> length ll            
+numDatArr a = case a of (RArray _ _ ll) -> length ll 
+                        (CArray _ _ ll) -> length ll            
 
 
 
@@ -318,7 +307,13 @@ numDatArr a = case a of (RArray _ s ll) -> length ll
 toBS :: String -> BS.ByteString
 toBS x = BS.pack $ (toEnum . C.ord) <$> x
 
+-- | String -> lazy ByteString
+toLBS :: String -> L.ByteString
+toLBS x = L.pack $ (toEnum . C.ord) <$> x
 
-t1 = toBS "%%MatrixMarket matrix coordinate real general\n5  5  8\n1     1   1.000e+00\n2     2   1.050e+01\n3     3   1.500e-02\n1     4   6.000e+00\n4     2   2.505e+02\n4     4  -2.800e+02\n4     5   3.332e+01\n5     5   1.200e+01\n"
 
-t2 = toBS "%%MatrixMarket matrix coordinate real general\n5  5  8\n1     1   1.000e+00\n"
+
+
+-- t1 = toBS "%%MatrixMarket matrix coordinate real general\n5  5  8\n1     1   1.000e+00\n2     2   1.050e+01\n3     3   1.500e-02\n1     4   6.000e+00\n4     2   2.505e+02\n4     4  -2.800e+02\n4     5   3.332e+01\n5     5   1.200e+01\n"
+
+-- t2 = toBS "%%MatrixMarket matrix coordinate real general\n5  5  8\n1     1   1.000e+00\n"
