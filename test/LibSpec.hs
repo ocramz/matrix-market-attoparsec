@@ -3,7 +3,7 @@ module LibSpec where
 import Test.Hspec
 import Test.Hspec.QuickCheck
 
-import Lib 
+import Data.Matrix.MatrixMarket
 
 main :: IO ()
 main = hspec spec
@@ -21,12 +21,12 @@ spec =
     it "fidapm05_rhs1 : imports all array entries" $ do 
       x <- readArray "data/fidapm05_rhs1.mtx"
       consistentDimsArr x `shouldBe` True  
-    it "memplus : imports all matrix entries" $ do 
-      x <- readMatrix "data/memplus.mtx"
-      consistentDims x `shouldBe` True
-    it "memplus_rhs1 : imports all array entries" $ do 
-      x <- readArray "data/memplus_rhs1.mtx"
-      consistentDimsArr x `shouldBe` True    
+    -- it "memplus : imports all matrix entries" $ do 
+    --   x <- readMatrix "data/memplus.mtx"
+    --   consistentDims x `shouldBe` True
+    -- it "memplus_rhs1 : imports all array entries" $ do 
+    --   x <- readArray "data/memplus_rhs1.mtx"
+    --   consistentDimsArr x `shouldBe` True    
 
 
 -- | Helpers
