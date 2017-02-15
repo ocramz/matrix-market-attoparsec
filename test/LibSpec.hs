@@ -17,18 +17,23 @@ spec =
     --   ourAdd x y `shouldBe` ourAdd y x
     it "fidapm05 : imports all matrix entries" $ do 
       x <- readMatrix "data/fidapm05.mtx"
-      isConsistent x `shouldBe` True
+      consistentDims x `shouldBe` True
     it "memplus : imports all matrix entries" $ do 
       x <- readMatrix "data/memplus.mtx"
-      isConsistent x `shouldBe` True
+      consistentDims x `shouldBe` True
     it "memplus_rhs1 : imports all array entries" $ do 
       x <- readArray "data/memplus_rhs1.mtx"
-      isConsistentArr x `shouldBe` True    
+      consistentDimsArr x `shouldBe` True    
 
 
-isConsistent :: Matrix t -> Bool
-isConsistent m = nnz m == numDat m
+-- | Helpers
 
-isConsistentArr mm = d == numDatArr mm where
+-- check if matrix dimensions (read from header vs counted from memory) coincide
+consistentDims :: Matrix t -> Bool
+consistentDims m = nnz m == numDat m
+
+-- check if array dimensions (read from header vs counted from memory) coincide
+consistentDimsArr :: Array a -> Bool
+consistentDimsArr mm = d == numDatArr mm where
   (m,n) = dimArr mm
   d = m*n
