@@ -1,5 +1,5 @@
 name:                matrix-market-attoparsec
-version:             0.1.0.3
+version:             0.1.0.4
 synopsis:            Parsing and serialization functions for the NIST Matrix Market format
 description:         Please see README.md
 homepage:            https://github.com/ocramz/matrix-market-attoparsec
@@ -11,6 +11,8 @@ copyright:           2017 Marco Zocca
 category:            Parsers
 build-type:          Simple
 extra-source-files:  README.md
+                     CONTRIBUTORS.md
+                     CHANGELOG.markdown
 data-dir:            data
 data-files:          fidapm05.mtx
                      fidapm05_rhs1.mtx                     
