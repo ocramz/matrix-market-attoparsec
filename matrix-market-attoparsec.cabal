@@ -32,7 +32,7 @@ library
                      , base        >= 4.7 && < 5
                      , bytestring  >= 0.9
                      , exceptions
-                     , scientific  >= 0.3.4.9
+                     , scientific  >= 0.3.3.8
 
 -- executable matrix-market-attoparsec
 --   default-language:    Haskell2010

@@ -29,6 +29,8 @@ module Data.Matrix.MatrixMarket
         -- ** Matrix-related
         nnz, dim, numDat,
         -- ** Array-related
-        dimArr, numDatArr) where
+        dimArr, numDatArr,
+        -- * Exceptions
+        ImportError) where
 
 import Data.Matrix.MatrixMarket.Internal as M

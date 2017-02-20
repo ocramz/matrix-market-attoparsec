@@ -22,7 +22,8 @@ module Data.Matrix.MatrixMarket.Internal
         Matrix(..), Array(..),
         Format (Coordinate, Array), Structure (General, Symmetric, Hermitian, Skew),
         nnz, dim, numDat,
-        dimArr, numDatArr) where
+        dimArr, numDatArr,
+        ImportError) where
 
 
 
