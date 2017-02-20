@@ -1,3 +1,4 @@
+{-# language DeriveDataTypeable #-}
 module Control.Exception.Common where
 
 import Control.Exception

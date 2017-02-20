@@ -15,6 +15,7 @@ addons:
 env:
 - ARGS=""
 - ARGS="--resolver lts"
+- ARGS="--resolver lts-2.22" # GHC 7.8.4
 - ARGS="--resolver nightly"
 
 before_install:
