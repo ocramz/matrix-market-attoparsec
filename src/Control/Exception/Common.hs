@@ -2,7 +2,7 @@
 module Control.Exception.Common where
 
 import Control.Exception
-import Control.Monad.Catch (MonadThrow (..))
+-- import Control.Monad.Catch (MonadThrow (..))
 import Data.Typeable -- (TypeRep, Typeable, typeRep)
 
 
