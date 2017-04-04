@@ -2,7 +2,7 @@
 -- |
 -- Module      :  Data.Matrix.MatrixMarket
 -- Copyright   :  (c) Marco Zocca 2017
--- License     :  GPL-3 (see the file LICENSE)
+-- License     :  BSD2 (see the file LICENSE)
 --
 -- Maintainer  :  zocca marco gmail
 -- Stability   :  experimental

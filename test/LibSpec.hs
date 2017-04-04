@@ -17,9 +17,9 @@ spec =
   describe "Data.Matrix.MatrixMarket" $ do
     -- prop "ourAdd is commutative" $ \x y ->
     --   ourAdd x y `shouldBe` ourAdd y x
-    it "fidapm05 : read/write/read roundtrip" $ do 
+    it "fidapm05 : read/write/read roundtrip" $ 
       roundTrip Coordinate "fidapm05.mtx" -- fidapm05_rhs1.mtx
-    it "fidapm05_rhs1 : read/write/read roundtrip" $ do 
+    it "fidapm05_rhs1 : read/write/read roundtrip" $ 
       roundTrip Array "fidapm05_rhs1.mtx"
     -- it "memplus : read/write/read roundtrip" $ do 
     --   roundTrip "memplus.mtx"
