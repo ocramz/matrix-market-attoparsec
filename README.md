@@ -2,9 +2,9 @@
 
 [![Build Status](https://travis-ci.org/ocramz/matrix-market-attoparsec.png)](https://travis-ci.org/ocramz/matrix-market-attoparsec)
 
-Attoparsec parser for the NIST Matrix Market format [1].
+Attoparsec parser for the NIST Matrix Market format [0].
 
-The library also contains functions for serializing to text file, and the read/write/read roundtrip works as expected.
+The library also contains functions for serializing matrix data to text file.
 
 ## User guide
 
@@ -38,4 +38,4 @@ Algebraic vectors, such as the right-hand sides of equation systems, are stored 
 
 ## References
 
-[1] [http://math.nist.gov/MatrixMarket/](http://math.nist.gov/MatrixMarket/)
+[0] [http://math.nist.gov/MatrixMarket/](http://math.nist.gov/MatrixMarket/)
