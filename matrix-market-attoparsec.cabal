@@ -1,5 +1,5 @@
 name:                matrix-market-attoparsec
-version:             0.1.0.7
+version:             0.1.0.8
 synopsis:            Parsing and serialization functions for the NIST Matrix Market format
 description:         Parsing and serialization functions for the NIST Matrix Market format.
 homepage:            https://github.com/ocramz/matrix-market-attoparsec
