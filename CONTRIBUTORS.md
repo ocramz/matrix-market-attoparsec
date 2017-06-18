@@ -1,1 +1,3 @@
-Trevor McDonell and the `accelerate` contributors : Data.Matrix.MatrixMarket
+Trevor McDonell (tmcdonell) and the `accelerate` contributors : Data.Matrix.MatrixMarket
+
+Peter Simons (peti)
