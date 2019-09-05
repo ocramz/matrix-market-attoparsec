@@ -10,15 +10,15 @@
 -- Portability :  portable
 --
 -- Attoparsec parser and serializer for the NIST MatrixMarket format. The parser logic originally appeared in `accelerate-examples` and it is reused here (courtesy of T.McDonell and the `accelerate` developers) with some amendments.
--- 
+--
 -- In this version:
 -- * Numbers are represented with Scientific notation instead of floating point
 -- * Parsing rules are a bit relaxed to accommodate various whitespace corner cases
 --
 -----------------------------------------------------------------------------
 module Data.Matrix.MatrixMarket.Internal
-       (readMatrix, readArray,
-        writeMatrix, writeArray,
+       (readMatrix, readMatrix', readArray,
+        writeMatrix, writeMatrix', writeArray,
         Matrix(..), Array(..),
         Format (Coordinate, Array), Structure (General, Symmetric, Hermitian, Skew),
         nnz, dim, numDat,
@@ -61,7 +61,7 @@ data Format = Coordinate | Array
 --
 data Field  = R | C | I | P
     deriving (Eq, Show)
-             
+
 
 -- | Specifies any special structure in the matrix.  For symmetric and hermitian
 -- matrices, only the lower-triangular part of the matrix is given. For skew
@@ -147,7 +147,7 @@ line3 :: Integral i => Parser a -> Parser (i,i,a)
 line3 f = (,,) <$> integral
                <*> integral
                <*> f
-               <*  endOfLine
+               <*  (endOfLine <|> L.endOfInput)
 
 skipSpace' :: Parser String
 skipSpace' = many' space
@@ -164,7 +164,7 @@ matrix = do
   if f /= Coordinate
     then fail "matrix is not in Coordinate format"
     else
-    case t of 
+    case t of
      R -> RMatrix (m,n) l s <$> many1 (line3 floating)
      C -> CMatrix (m,n) l s <$> many1 (line3 ((:+) <$> floating <*> floating))
      I -> IntMatrix     (m,n) l s <$> many1 (line3 integral)
@@ -185,8 +185,11 @@ array = do
 
 -- | Load a matrix (sparse, i.e. in Coordinate format) from file
 readMatrix :: FilePath -> IO (Matrix S.Scientific)
-readMatrix file = do
-  chunks <- L.readFile file
+readMatrix file = L.readFile file >>= readMatrix'
+
+-- | Load a matrix (sparse, i.e. in Coordinate format) from a bytestring.
+readMatrix' :: L.ByteString -> IO (Matrix S.Scientific)
+readMatrix' chunks =
   case L.parse matrix chunks of
     L.Fail _ _ msg      -> throwM (FileParseError "readMatrix" msg)
     L.Done _ mtx        -> return mtx
@@ -225,7 +228,7 @@ headerStr f t s =
 
 
 nl :: L.ByteString
-nl = toLBS "\n" 
+nl = toLBS "\n"
 
 showLines :: (a -> String) -> [a] -> L.ByteString
 showLines showf d = L.concat (L.pack . withNewline . showf <$> d) where
@@ -235,13 +238,17 @@ showLines showf d = L.concat (L.pack . withNewline . showf <$> d) where
 
 -- | Serialize a sparse matrix in Coordinate format
 writeMatrix :: Show b => FilePath -> Matrix b -> IO ()
-writeMatrix file mat = 
-  case mat of (RMatrix d nz s dat) -> 
-                L.writeFile file (matrixByteString d nz R s dat)
-              (CMatrix d nz s dat) -> 
-                L.writeFile file (matrixByteString d nz C s dat)
-              (IntMatrix d nz s dat) -> 
-                L.writeFile file (matrixByteString d nz I s dat)
+writeMatrix file = L.writeFile file . writeMatrix'
+
+-- | Serialize a sparse matrix in Coordinate format as a bytestring
+writeMatrix' :: Show b => Matrix b -> L.ByteString
+writeMatrix' mat =
+  case mat of (RMatrix d nz s dat) ->
+                matrixByteString d nz R s dat
+              (CMatrix d nz s dat) ->
+                matrixByteString d nz C s dat
+              (IntMatrix d nz s dat) ->
+                matrixByteString d nz I s dat
               _ -> error "writeMatrix : PatternMatrix not implemented yet"
      where
        matrixByteString di nz t s d =
@@ -252,11 +259,11 @@ writeMatrix file mat =
                    showLines sf3 d]
          where
          sf3 (i,j,x) = unwords [show i, show j, show x]
-         headerSzMatrix (m,n) numz = B.pack $ unwords [show m, show n, show numz] 
+         headerSzMatrix (m,n) numz = B.pack $ unwords [show m, show n, show numz]
 
 -- | Serialize a dense matrix in Array format
-writeArray :: Show a => FilePath -> Array a -> IO ()  
-writeArray file arr = 
+writeArray :: Show a => FilePath -> Array a -> IO ()
+writeArray file arr =
   case arr of (RArray d s dat) -> L.writeFile file (arrayByteString d R s dat)
               (CArray d s dat) -> L.writeFile file (arrayByteString d C s dat)
     where
@@ -267,8 +274,8 @@ writeArray file arr =
             nl,
             showLines show d] where
         headerSzArray (m,n) = B.pack $ unwords [show m, show n]
-  
-  
+
+
 
 
 
@@ -291,7 +298,7 @@ dim m = case m of (RMatrix d _ _ _) -> d
                   (PatternMatrix d _ _ _) -> d
                   (IntMatrix d _ _ _) -> d
 
--- | Length of data vector internal to the Matrix; this is _not_ necessarily the actual number of matrix entries because symmetric entries are not stored 
+-- | Length of data vector internal to the Matrix; this is _not_ necessarily the actual number of matrix entries because symmetric entries are not stored
 numDat :: Matrix t -> Int
 numDat m = case m of (RMatrix _ _ _ d) -> length d
                      (CMatrix _ _ _ d) -> length d
@@ -304,10 +311,10 @@ dimArr :: Array t -> (Int, Int)
 dimArr a = case a of (RArray d _ _) -> d
                      (CArray d _ _) -> d
 
--- | Length of data vector internal to the Array; this is _not_ necessarily the actual number of matrix entries because symmetric entries are not stored 
+-- | Length of data vector internal to the Array; this is _not_ necessarily the actual number of matrix entries because symmetric entries are not stored
 numDatArr :: Array a -> Int
-numDatArr a = case a of (RArray _ _ ll) -> length ll 
-                        (CArray _ _ ll) -> length ll            
+numDatArr a = case a of (RArray _ _ ll) -> length ll
+                        (CArray _ _ ll) -> length ll
 
 
 
