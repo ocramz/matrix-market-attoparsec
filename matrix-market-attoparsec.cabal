@@ -1,5 +1,5 @@
 name:                matrix-market-attoparsec
-version:             0.1.0.8
+version:             0.1.0.9
 synopsis:            Parsing and serialization functions for the NIST Matrix Market format
 description:         Parsing and serialization functions for the NIST Matrix Market format.
 homepage:            https://github.com/ocramz/matrix-market-attoparsec
@@ -17,7 +17,7 @@ data-dir:            data
 data-files:          fidapm05.mtx
                      fidapm05_rhs1.mtx                     
 cabal-version:       >=1.10
-tested-with:         GHC == 8.0.1
+tested-with:         GHC == 8.0.1, GHC == 8.6.5
 
 
                      

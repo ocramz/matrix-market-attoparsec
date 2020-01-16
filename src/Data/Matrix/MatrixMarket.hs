@@ -8,14 +8,12 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- Attoparsec parser and serializer for the NIST MatrixMarket format. The parser logic originally appeared in `accelerate-examples` and it is reused here (courtesy of T.McDonell and the `accelerate` developers) with some amendments.
--- 
--- In this version:
+-- @attoparsec@-based parser and serializer for the NIST MatrixMarket format [1]. The parser logic originally appeared in @accelerate-examples@ and it is reused here (courtesy of T.McDonell and the @accelerate@ developers) with some amendments.
 --
--- *) Numbers are represented with Scientific notation instead of floating point
 --
--- *) Parsing rules are a bit relaxed to accommodate various whitespace corner cases
+-- References :
 --
+-- 1. https://math.nist.gov/MatrixMarket/
 -----------------------------------------------------------------------------
 module Data.Matrix.MatrixMarket
        (-- * Load

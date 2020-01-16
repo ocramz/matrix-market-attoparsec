@@ -14,8 +14,8 @@ addons:
 # change flags or use --stack-yaml to point to a different file.
 env:
 - ARGS=""
-- ARGS="--resolver lts"
-- ARGS="--resolver lts-2.22" # GHC 7.8.4
+- ARGS="--resolver lts-7.24" # 8.0.1
+- ARGS="--resolver lts-14.20" # 8.6.5
 - ARGS="--resolver nightly"
 
 before_install:
