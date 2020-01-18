@@ -17,9 +17,9 @@
 -----------------------------------------------------------------------------
 module Data.Matrix.MatrixMarket
        (-- * Load
-        readMatrix, readArray,
+        readMatrix, readMatrix', readArray,
         -- * Save
-        writeMatrix, writeArray,
+        writeMatrix, writeMatrix', writeArray,
         -- 
         Matrix(..), Array(..),
         Format (Coordinate, Array), Structure (General, Symmetric, Hermitian, Skew),
