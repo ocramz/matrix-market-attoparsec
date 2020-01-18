@@ -1,3 +1,4 @@
+
 {-# LANGUAGE GADTs, OverloadedStrings, DeriveFunctor #-}
 -----------------------------------------------------------------------------
 -- |
@@ -23,11 +24,12 @@ module Data.Matrix.MatrixMarket.Internal
         Format (Coordinate, Array), Structure (General, Symmetric, Hermitian, Skew),
         nnz, dim, numDat,
         dimArr, numDatArr,
-        ImportError) where
+        ImportError(..), ExportError(..)) where
 
 
 
 import Control.Applicative                      hiding ( many )
+import Data.Functor (($>))
 
 import Data.Int
 import qualified Data.Char as C
@@ -37,10 +39,10 @@ import Data.Attoparsec.ByteString.Char8 hiding (I)
 -- import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Attoparsec.Lazy           as L
-import qualified Data.ByteString.Lazy           as L
+import qualified Data.ByteString.Lazy           as LBS
 
 import Control.Monad.Catch
-import Control.Exception.Common
+import Control.Exception.Common (ImportError(..), ExportError(..))
 
 
 
@@ -107,22 +109,22 @@ integral :: Integral a => Parser a
 integral = skipSpace' *> decimal
 
 format :: Parser Format
-format =  string "coordinate" *> pure Coordinate
-      <|> string "array"      *> pure Array
+format =  string "coordinate" $> Coordinate
+      <|> string "array"      $> Array
       <?> "matrix format"
 
 field :: Parser Field
-field =  string "real"    *> pure R
-     <|> string "complex" *> pure C
-     <|> string "integer" *> pure I
-     <|> string "pattern" *> pure P
+field =  string "real"    $> R
+     <|> string "complex" $> C
+     <|> string "integer" $> I
+     <|> string "pattern" $> P
      <?> "matrix field"
 
 structure :: Parser Structure
-structure =  string "general"        *> pure General
-         <|> string "symmetric"      *> pure Symmetric
-         <|> string "hermitian"      *> pure Hermitian
-         <|> string "skew-symmetric" *> pure Skew
+structure =  string "general"        $> General
+         <|> string "symmetric"      $> Symmetric
+         <|> string "hermitian"      $> Hermitian
+         <|> string "skew-symmetric" $> Skew
          <?> "matrix structure"
 
 header :: Parser (Format,Field,Structure)
@@ -183,21 +185,27 @@ array = do
        _ -> fail "integer and pattern cases not relevant for the dense case"
 
 
--- | Load a matrix (sparse, i.e. in Coordinate format) from file
+-- | Load a matrix (sparse, i.e. in Coordinate format) from file.
+--
+-- Uses 'readMatrix'' internally
 readMatrix :: FilePath -> IO (Matrix S.Scientific)
-readMatrix file = L.readFile file >>= readMatrix'
+readMatrix file = LBS.readFile file >>= readMatrix'
 
--- | Load a matrix (sparse, i.e. in Coordinate format) from a bytestring.
-readMatrix' :: L.ByteString -> IO (Matrix S.Scientific)
+-- | Load a matrix (sparse, i.e. in Coordinate format) from a lazy 'LBS.ByteString'.
+--
+-- Throws a 'FileParseError' if the input cannot be parsed
+readMatrix' :: LBS.ByteString -> IO (Matrix S.Scientific)
 readMatrix' chunks =
   case L.parse matrix chunks of
     L.Fail _ _ msg      -> throwM (FileParseError "readMatrix" msg)
     L.Done _ mtx        -> return mtx
 
 -- | Load a dense matrix (i.e. a matrix or vector in Array format) from file
+--
+-- Throws a 'FileParseError' if the input cannot be parsed
 readArray :: FilePath -> IO (Array S.Scientific)
 readArray file = do
-  chunks <- L.readFile file
+  chunks <- LBS.readFile file
   case L.parse array chunks of
     L.Fail _ _ msg      -> throwM (FileParseError "readArray" msg)
     L.Done _ mtx        -> return mtx
@@ -221,38 +229,44 @@ showStruct = map C.toLower <$> show
 
 -- %%MatrixMarket matrix coordinate real general
 
-headerStr :: Format -> Field -> Structure -> L.ByteString
+headerStr :: Format -> Field -> Structure -> LBS.ByteString
 headerStr f t s =
     B.pack $ unwords ["%%MatrixMarket matrix",
                       showFormat f, showField t, showStruct s]
 
 
-nl :: L.ByteString
+nl :: LBS.ByteString
 nl = toLBS "\n"
 
-showLines :: (a -> String) -> [a] -> L.ByteString
-showLines showf d = L.concat (L.pack . withNewline . showf <$> d) where
+showLines :: (a -> String) -> [a] -> LBS.ByteString
+showLines showf d = LBS.concat (LBS.pack . withNewline . showf <$> d) where
   withNewline x = toEnum . C.ord <$> x ++ "\n"
 
 
 
--- | Serialize a sparse matrix in Coordinate format
+-- | Serialize a sparse matrix in Coordinate format to a file
+--
+-- Uses 'writeMatrix'' internally
 writeMatrix :: Show b => FilePath -> Matrix b -> IO ()
-writeMatrix file = L.writeFile file . writeMatrix'
+writeMatrix fp mat = do
+  mbs <- writeMatrix' mat
+  LBS.writeFile fp mbs
 
--- | Serialize a sparse matrix in Coordinate format as a bytestring
-writeMatrix' :: Show b => Matrix b -> L.ByteString
+-- | Serialize a sparse matrix in Coordinate format as a 'LBS.Bytestring'
+--
+-- Throws a 'FormatExportNotSupported' if the user tries to serialize a 'PatternMatrix' value.
+writeMatrix' :: (MonadThrow m, Show b) => Matrix b -> m LBS.ByteString
 writeMatrix' mat =
   case mat of (RMatrix d nz s dat) ->
-                matrixByteString d nz R s dat
+                pure $ matrixByteString d nz R s dat
               (CMatrix d nz s dat) ->
-                matrixByteString d nz C s dat
+                pure $ matrixByteString d nz C s dat
               (IntMatrix d nz s dat) ->
-                matrixByteString d nz I s dat
-              _ -> error "writeMatrix : PatternMatrix not implemented yet"
+                pure $ matrixByteString d nz I s dat
+              _ -> throwM (FormatExportNotSupported "writeMatrix" "PatternMatrix not implemented yet")
      where
        matrixByteString di nz t s d =
-         L.concat [headerStr Coordinate t s,
+         LBS.concat [headerStr Coordinate t s,
                    nl,
                    headerSzMatrix di nz,
                    nl,
@@ -264,11 +278,11 @@ writeMatrix' mat =
 -- | Serialize a dense matrix in Array format
 writeArray :: Show a => FilePath -> Array a -> IO ()
 writeArray file arr =
-  case arr of (RArray d s dat) -> L.writeFile file (arrayByteString d R s dat)
-              (CArray d s dat) -> L.writeFile file (arrayByteString d C s dat)
+  case arr of (RArray d s dat) -> LBS.writeFile file (arrayByteString d R s dat)
+              (CArray d s dat) -> LBS.writeFile file (arrayByteString d C s dat)
     where
       arrayByteString di t s d =
-        L.concat [headerStr Array t s,
+        LBS.concat [headerStr Array t s,
             nl,
             headerSzArray di,
             nl,
@@ -282,7 +296,6 @@ writeArray file arr =
 
 
 
--- | helpers
 
 -- | Number of matrix nonzeros
 nnz :: Matrix t -> Int
@@ -326,8 +339,8 @@ numDatArr a = case a of (RArray _ _ ll) -> length ll
 
 -- | String -> lazy ByteString
 -- NB: do not abuse
-toLBS :: String -> L.ByteString
-toLBS x = L.pack $ (toEnum . C.ord) <$> x
+toLBS :: String -> LBS.ByteString
+toLBS x = LBS.pack $ (toEnum . C.ord) <$> x
 
 
 

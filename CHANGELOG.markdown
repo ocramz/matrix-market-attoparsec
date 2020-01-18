@@ -1,3 +1,7 @@
+0.1.1.0
+
+Add ExportError exception
+
 0.1.0.1
 
-Added MatrixMarket module from `accelerate-examples` SMVM
+Add MatrixMarket module from `accelerate-examples` SMVM

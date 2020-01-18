@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Matrix.MatrixMarket
--- Copyright   :  (c) Marco Zocca 2017
+-- Copyright   :  (c) Marco Zocca 2017-2020
 -- License     :  BSD2 (see the file LICENSE)
 --
 -- Maintainer  :  zocca marco gmail
@@ -29,6 +29,6 @@ module Data.Matrix.MatrixMarket
         -- ** Array-related
         dimArr, numDatArr,
         -- * Exceptions
-        ImportError) where
+        ImportError(..), ExportError(..)) where
 
 import Data.Matrix.MatrixMarket.Internal as M
