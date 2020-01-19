@@ -20,6 +20,8 @@ The module `Data.Matrix.MatrixMarket` exports the user interface:
 
 The first two functions contain the parsing logic, and make use of `scientific` for parsing numerical data in scientific notation.
 
+As of version 0.1.1 there are also intermediate functions @readMatrix'@, @readArray'@, @writeMatrix'@ and @writeArray'@ that do not touch the filesystem but (de-)serialize from/to lazy ByteString.
+
 
 ### Naming convention
 

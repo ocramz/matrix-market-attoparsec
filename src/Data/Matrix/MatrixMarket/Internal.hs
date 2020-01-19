@@ -18,8 +18,8 @@
 --
 -----------------------------------------------------------------------------
 module Data.Matrix.MatrixMarket.Internal
-       (readMatrix, readMatrix', readArray,
-        writeMatrix, writeMatrix', writeArray,
+       (readMatrix, readMatrix', readArray, readArray',
+        writeMatrix, writeMatrix', writeArray, writeArray',
         Matrix(..), Array(..),
         Format (Coordinate, Array), Structure (General, Symmetric, Hermitian, Skew),
         nnz, dim, numDat,
@@ -191,21 +191,28 @@ array = do
 readMatrix :: FilePath -> IO (Matrix S.Scientific)
 readMatrix file = LBS.readFile file >>= readMatrix'
 
--- | Load a matrix (sparse, i.e. in Coordinate format) from a lazy 'LBS.ByteString'.
+-- | Deserialize a matrix (sparse, i.e. in Coordinate format) from a lazy 'LBS.ByteString'.
 --
 -- Throws a 'FileParseError' if the input cannot be parsed
-readMatrix' :: LBS.ByteString -> IO (Matrix S.Scientific)
+readMatrix' :: MonadThrow m => LBS.ByteString -> m (Matrix S.Scientific)
 readMatrix' chunks =
   case L.parse matrix chunks of
     L.Fail _ _ msg      -> throwM (FileParseError "readMatrix" msg)
     L.Done _ mtx        -> return mtx
 
--- | Load a dense matrix (i.e. a matrix or vector in Array format) from file
+-- | Load a dense matrix (i.e. a matrix or vector in Array format) from file.
 --
--- Throws a 'FileParseError' if the input cannot be parsed
+-- Uses 'readArray'' internally
 readArray :: FilePath -> IO (Array S.Scientific)
 readArray file = do
   chunks <- LBS.readFile file
+  readArray' chunks
+
+-- | Deserialize a dense matrix (i.e. a matrix or vector in Array format) from a lazy 'LBS.ByteString'.
+-- 
+-- Throws a 'FileParseError' if the input cannot be parsed
+readArray' :: MonadThrow m => LBS.ByteString -> m (Array S.Scientific)
+readArray' chunks =
   case L.parse array chunks of
     L.Fail _ _ msg      -> throwM (FileParseError "readArray" msg)
     L.Done _ mtx        -> return mtx
@@ -244,7 +251,7 @@ showLines showf d = LBS.concat (LBS.pack . withNewline . showf <$> d) where
 
 
 
--- | Serialize a sparse matrix in Coordinate format to a file
+-- | Store a sparse matrix in Coordinate format to a file.
 --
 -- Uses 'writeMatrix'' internally
 writeMatrix :: Show b => FilePath -> Matrix b -> IO ()
@@ -252,7 +259,7 @@ writeMatrix fp mat = do
   mbs <- writeMatrix' mat
   LBS.writeFile fp mbs
 
--- | Serialize a sparse matrix in Coordinate format as a 'LBS.Bytestring'
+-- | Serialize a sparse matrix in Coordinate format into a 'LBS.ByteString'.
 --
 -- Throws a 'FormatExportNotSupported' if the user tries to serialize a 'PatternMatrix' value.
 writeMatrix' :: (MonadThrow m, Show b) => Matrix b -> m LBS.ByteString
@@ -275,7 +282,9 @@ writeMatrix' mat =
          sf3 (i,j,x) = unwords [show i, show j, show x]
          headerSzMatrix (m,n) numz = B.pack $ unwords [show m, show n, show numz]
 
--- | Serialize a dense matrix in Array format
+-- | Write a dense matrix from the Array format into a file.
+--
+-- Uses 'writeArray'' internally.
 writeArray :: Show a => FilePath -> Array a -> IO ()
 writeArray file arr =
   case arr of (RArray d s dat) -> LBS.writeFile file (arrayByteString d R s dat)
@@ -289,8 +298,19 @@ writeArray file arr =
             showLines show d] where
         headerSzArray (m,n) = B.pack $ unwords [show m, show n]
 
-
-
+-- | Serialize a dense matrix from the Array format into a 'LBS.ByteString'
+writeArray' :: Show a => Array a -> LBS.ByteString
+writeArray' arr =
+  case arr of (RArray d s dat) -> arrayByteString d R s dat
+              (CArray d s dat) -> arrayByteString d C s dat
+  where
+    arrayByteString di t s d =
+      LBS.concat [headerStr Array t s,
+                   nl,
+                   headerSzArray di,
+                   nl,
+                   showLines show d] 
+    headerSzArray (m,n) = B.pack $ unwords [show m, show n]
 
 
 

@@ -17,10 +17,16 @@
 -----------------------------------------------------------------------------
 module Data.Matrix.MatrixMarket
        (-- * Load
-        readMatrix, readMatrix', readArray,
+         -- ** Matrix
+        readMatrix, readMatrix',
+        -- ** Array
+        readArray, readArray',
         -- * Save
-        writeMatrix, writeMatrix', writeArray,
-        -- 
+        -- ** Matrix
+        writeMatrix, writeMatrix',
+        -- ** Array
+        writeArray, writeArray',
+        -- * Types
         Matrix(..), Array(..),
         Format (Coordinate, Array), Structure (General, Symmetric, Hermitian, Skew),
         -- * Helpers
